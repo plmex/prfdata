@@ -15,19 +15,19 @@ res <- df_total |>
 
 prediction <- res$pred
 
-dados2022 <- list(
-  "ano" = 2022,
-  "qnt_acidentes" = 64547,
-  "qnt_acidentes_fatais" = 4662,
-  "condutores" = 79921178,
-  "veiculos_total" = 115116532,
+dados2023 <- list(
+  "ano" = 2023,
+  "qnt_acidentes" = 67638,
+  "qnt_acidentes_fatais" = 4846,
+  "condutores" = 82613049,
+  "veiculos_total" = 117366780,
   "populacao" = 203062512
 ) |> as.data.frame()
 
-df_2022 <- bind_rows(drop_na(df_total), dados2022)
+df_2023 <- bind_rows(drop_na(df_total), dados2023)
 
 res2 <- df_total |>
   lm_model() |>
-  lm_extract(df_2022)
+  lm_extract(df_2023)
 
 prediction2 <- res2$pred
