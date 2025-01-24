@@ -22,7 +22,7 @@ import_cnh <- function(endereco) {
   
   df <- df |> rename(condutores = Total)
   qtde_condutores <- last(df)
-  
+
   qtde_condutores |>
     mutate(
       ano = as.numeric(str_sub(endereco, 44, 47)),
