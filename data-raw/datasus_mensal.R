@@ -11,6 +11,6 @@ obitos_transito_mensal <- rtdeaths |>
     ano = ano_ocorrencia,
     uf = nome_uf_ocor
   ) |> 
-  filter(ano < 2022 | is.na(ano))
+  filter(ano < 2023 | is.na(ano))
 
 save(obitos_transito_mensal, file = "data/obitos_transito_mensal.rda")
