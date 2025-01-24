@@ -1,15 +1,14 @@
 library(arrow)
 library(tidyverse)
 
-url <- "https://github.com/ONSV/prfdata/releases/download/v0.2.0/prf_sinistros.zip"
+url <- "https://github.com/ONSV/prfdata/releases/download/v0.2.1/prf_sinistros.parquet"
 
-temp_file <- tempfile()
-temp_dir <- tempdir()
+temp_file <- tempfile(fileext = ".parquet")
 
 download.file(url, temp_file, quiet = T)
-unzip(temp_file, exdir = temp_dir)
 
-sinistros_prf <- open_dataset(file.path(temp_dir, "prf_sinistros")) |> 
+
+sinistros_prf <- open_dataset(temp_file) |> 
   mutate(
     acidentes_fatais = if_else(
       classificacao_acidente == "Com Vítimas Fatais",
@@ -24,7 +23,7 @@ sinistros_prf <- open_dataset(file.path(temp_dir, "prf_sinistros")) |>
     qnt_mortos = sum(mortos)
   ) |> 
   arrange(ano) |> 
-  filter(ano <= 2021) |> 
+  filter(ano <= 2022) |> 
   collect()
 
 unlink(temp_file)
