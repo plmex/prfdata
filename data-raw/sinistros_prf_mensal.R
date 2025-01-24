@@ -1,15 +1,14 @@
 library(tidyverse)
 library(arrow)
 
-url <- "https://github.com/ONSV/prfdata/releases/download/v0.2.0/prf_sinistros.zip"
+url <- "https://github.com/ONSV/prfdata/releases/download/v0.2.1/prf_sinistros.parquet"
 
-temp_file <- tempfile()
-temp_dir <- tempdir()
+temp_file <- tempfile(fileext = ".parquet")
 
 download.file(url, temp_file, quiet = T)
-unzip(temp_file, exdir = temp_dir)
 
-sinistros_prf_mensal <- open_dataset(file.path(temp_dir,"prf_sinistros")) |> 
+
+sinistros_prf_mensal <- open_dataset(temp_file) |> 
   mutate(
     mes = month(data_inversa),
     acidentes_fatais = if_else(
