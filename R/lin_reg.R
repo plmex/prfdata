@@ -8,17 +8,17 @@ load(here("data","tabela_total.rda"))
 load(here("data","tabela_total_mensal.rda"))
 load(here("data","tabela_condutores.rda"))
 load(here("data/pib_mensal.rda"))
-temp <- tempfile()
-download.file("https://github.com/ONSV/prfdata/releases/download/v0.2.0/prf_sinistros.zip", temp)
-unzip(temp, exdir = tempdir())
-unlink(temp)
-prf_sinistros <- open_dataset(paste(sep = "/", file.path(tempdir()), "prf_sinistros"))
+
+url <- "https://github.com/ONSV/prfdata/releases/download/v0.2.1/prf_sinistros.parquet"
+temp <- tempfile(fileext = ".parquet")
+download.file(url, temp, quiet = T)
+prf_sinistros <- open_dataset(temp)
 
 metricas <- metric_set(rmse, mae, rsq)
 
 # anual
 
-dados_modelo_2023 <- list(
+dados_modelo_2024 <- list(
   drop_na(count(rename(rtdeaths, ano = ano_ocorrencia), ano, name = "mortes")),
   summarise(filter(fleetbr, modal == "TOTAL", mes == 7), 
             .by = ano, frota = sum(frota)),
@@ -34,32 +34,32 @@ dados_modelo_2023 <- list(
   reduce(full_join, by = "ano") |> 
   arrange(ano)
 
-rec_anual_2023 <-
-  recipe(x = drop_na(dados_modelo_2023), mortes ~ .) |> 
+rec_anual_2024 <-
+  recipe(x = drop_na(dados_modelo_2024), mortes ~ .) |> 
   remove_role(ano, old_role = "predictor") |> 
   step_normalize(all_numeric_predictors())
 
-modelo_anual_2023 <-
+modelo_anual_2024 <-
   linear_reg() |> 
   set_engine("lm")
 
-wflow_anual_2023 <-
+wflow_anual_2024 <-
   workflow() |> 
-  add_model(modelo_anual_2023) |> 
-  add_recipe(rec_anual_2023) |> 
-  fit(drop_na(dados_modelo_2023))
+  add_model(modelo_anual_2024) |> 
+  add_recipe(rec_anual_2024) |> 
+  fit(drop_na(dados_modelo_2024))
 
-pred_anual_2023 <- bind_cols(
-  dados_modelo_2023,
-  predict(wflow_anual_2023, dados_modelo_2023),
-  predict(wflow_anual_2023, dados_modelo_2023, type = "conf_int")
+pred_anual_2024 <- bind_cols(
+  dados_modelo_2024,
+  predict(wflow_anual_2024, dados_modelo_2024),
+  predict(wflow_anual_2024, dados_modelo_2024, type = "conf_int")
 )
 
-metricas_anual <- metricas(data = pred_anual_2023, truth = mortes, estimate = .pred)
+metricas_anual <- metricas(data = pred_anual_2024, truth = mortes, estimate = .pred)
 
 # trimestral
 
-df_frota_2023 <- fleetbr |> 
+df_frota_2024 <- fleetbr |> 
   pivot_wider(names_from = modal, values_from = frota) |> 
   mutate(
     data = ym(paste0(ano,"-",mes)),
@@ -74,19 +74,19 @@ df_frota_2023 <- fleetbr |>
     motocicleta = sum(motocicleta)
   )
 
-df_mortes_2023 <- rtdeaths |> 
+df_mortes_2024 <- rtdeaths |> 
   mutate(mes = month(data_ocorrencia),
          ano = year(data_ocorrencia),
          data = ym(paste0(ano, "-", mes))) |> 
   count(data, name = "mortes") |> 
   drop_na()
 
-df_pib_2023 <- pib_mensal |> 
+df_pib_2024 <- pib_mensal |> 
   mutate(data = ym(paste0(ano, "-", mes))) |> 
   group_by(data) |> 
   summarise(pib)
 
-df_prf_2023 <- prf_sinistros |> 
+df_prf_2024 <- prf_sinistros |> 
   collect() |> 
   mutate(
     acidentes_fatais = if_else(
@@ -104,12 +104,12 @@ df_prf_2023 <- prf_sinistros |>
   ) |> 
   arrange(data)
 
-dados_mensais_2023 <- 
-  list(df_frota_2023, df_mortes_2023, df_pib_2023, df_prf_2023) |> 
+dados_mensais_2024 <- 
+  list(df_frota_2024, df_mortes_2024, df_pib_2024, df_prf_2024) |> 
   reduce(full_join, by = "data") |> 
   arrange(data)
 
-df_trimestre_2023 <- dados_mensais_2023 |>
+df_trimestre_2024 <- dados_mensais_2024 |>
   mutate(
     trimestre = quarter(data),
     data = quarter(data, type = "date_last")
@@ -128,12 +128,12 @@ df_trimestre_2023 <- dados_mensais_2023 |>
   ) |> 
   ungroup()
 
-splits_trimestre <- initial_split(drop_na(df_trimestre_2023), prop = 3/4)
+splits_trimestre <- initial_split(drop_na(df_trimestre_2024), prop = 3/4)
 train_trimestre <- training(splits_trimestre)
 test_trimestre <- testing(splits_trimestre)
 
 rec <- 
-  recipe(df_trimestre_2023, mortes ~ .) |> 
+  recipe(df_trimestre_2024, mortes ~ .) |> 
   remove_role(c(mortes_prf, trimestre, data), old_role = "predictor") |> 
   step_normalize(all_numeric_predictors())
 
@@ -150,10 +150,10 @@ lm_wflow_fit <-
   lm_wflow |> 
   fit(train_trimestre)
 
-pred_trimestre_2023 <- bind_cols(
-  df_trimestre_2023,
-  predict(lm_wflow_fit, df_trimestre_2023),
-  predict(lm_wflow_fit, df_trimestre_2023, type = "conf_int")
+pred_trimestre_2024 <- bind_cols(
+  df_trimestre_2024,
+  predict(lm_wflow_fit, df_trimestre_2024),
+  predict(lm_wflow_fit, df_trimestre_2024, type = "conf_int")
 )
 
 metricas_trimestre <- bind_cols(
@@ -164,31 +164,31 @@ metricas_trimestre <- bind_cols(
 
 # mensal
 
-split_2023 <- initial_split(drop_na(dados_mensais_2023), prop = 0.8)
+split_2024 <- initial_split(drop_na(dados_mensais_2024), prop = 0.8)
 
-train_2023 <- training(split_2023)
-test_2023 <- testing(split_2023)
+train_2024 <- training(split_2024)
+test_2024 <- testing(split_2024)
 
-rec_mensal_2023 <-
-  recipe(train_2023, mortes ~ .) |> 
+rec_mensal_2024 <-
+  recipe(train_2024, mortes ~ .) |> 
   remove_role(c(mortes_prf, data), old_role = "predictor") |> 
   step_normalize(all_numeric_predictors())
 
-lm_mensal_2023 <-
+lm_mensal_2024 <-
   linear_reg() |> 
   set_engine("lm")
 
-lm_wflow_mensal_2023 <-
+lm_wflow_mensal_2024 <-
   workflow() |> 
-  add_model(lm_mensal_2023) |> 
-  add_recipe(rec_mensal_2023) |> 
-  fit(train_2023)
+  add_model(lm_mensal_2024) |> 
+  add_recipe(rec_mensal_2024) |> 
+  fit(train_2024)
 
-pred_mensal_2023 <-
+pred_mensal_2024 <-
   bind_cols(
-    dados_mensais_2023,
-    predict(lm_wflow_mensal_2023, dados_mensais_2023),
-    predict(lm_wflow_mensal_2023, dados_mensais_2023, type = "conf_int")
+    dados_mensais_2024,
+    predict(lm_wflow_mensal_2024, dados_mensais_2024),
+    predict(lm_wflow_mensal_2024, dados_mensais_2024, type = "conf_int")
   )
 
-metricas_mensal <- metricas(pred_mensal_2023, truth = mortes, estimate = .pred)
+metricas_mensal <- metricas(pred_mensal_2024, truth = mortes, estimate = .pred)

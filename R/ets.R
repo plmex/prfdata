@@ -12,7 +12,7 @@ df_mortes <- rtdeaths |>
   summarise(.by = data, mortes = n()) |> 
   drop_na()
 
-ts <- ts(df_mortes$mortes, start = c(1996, 1), end = c(2022, 12), frequency = 12)
+ts <- ts(df_mortes$mortes, start = c(1996, 1), end = c(2023, 12), frequency = 12)
 
 ets <- HoltWinters(ts)
 
