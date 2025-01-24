@@ -58,11 +58,14 @@ load(here("data","tabela_total.rda"))
 load(here("data","tabela_total_mensal.rda"))
 load(here("data/pib_mensal.rda"))
 load(here("data","tabela_condutores.rda"))
-temp <- tempfile()
-download.file("https://github.com/ONSV/prfdata/releases/download/v0.2.0/prf_sinistros.zip", temp)
-unzip(temp, exdir = tempdir())
-unlink(temp)
-prf_sinistros <- open_dataset(paste(sep = "/", file.path(tempdir()), "prf_sinistros"))
+
+url <- "https://github.com/ONSV/prfdata/releases/download/v0.2.1/prf_sinistros.parquet"
+
+temp_file <- tempfile(fileext = ".parquet")
+
+download.file(url, temp_file, quiet = T)
+
+prf_sinistros <- open_dataset(temp_file) 
 
 # paleta
 paleta = as_vector(unname(onsv_palette))
@@ -101,7 +104,7 @@ O presente documento está organizado com a seguinte estrutura: a @sec-obj inclu
 
 Considerando o presente cenário, este estudo tem como objetivo elaborar um modelo de aprendizado de máquina para a previsão de mortes no trânsito em âmbito nacional no Brasil, investigando dados socioeconômicos e estruturais com o propósito de explorar diversos tipos de tratamentos e análises estatísticas para criar perspectivas futuras a cerca do cenário brasileiro da segurança viária. Posto isso, o projeto ainda visa avaliar a qualidade de cada tipo de modelo experimentado em expressar o fenômeno dos óbitos no trânsito, assim como elucidar a influência e relevância de cada variável considerada na construção do modelo preditivo criado para a incidência destes eventos.
 
-Outro objetivo do trabalho é realizar o cálculo do custo financeiro dos óbitos no trânsito brasileiro, utilizando como base o valor previsto pelo modelo para 2023 e com base nas estimativas do Instituto de Pesquisa Econômica Aplicada (IPEA). 
+Outro objetivo do trabalho é realizar o cálculo do custo financeiro dos óbitos no trânsito brasileiro, utilizando como base o valor previsto pelo modelo para 2023 e com base nas estimativas do Instituto de Pesquisa Econômica Aplicada (IPEA).
 
 O código-fonte do trabalho está disponibilizado para acesso em um repositório no [perfil do GitHub](https://github.com/ONSV/modelo_preditivo_onsv){target="_blank"} do Observatório Nacional de Segurança Viária.
 
@@ -231,16 +234,17 @@ Os conjuntos de dados extraídos e pré-processados em função das unidades de 
 rtdeaths |> 
   summarise(.by = ano_ocorrencia, obitos = n()) |> 
   drop_na() |> 
+  arrange(ano_ocorrencia) |>  
   plot_ly(x = ~ano_ocorrencia, y = ~obitos, 
           type = "scatter", 
           mode = "lines",
           line = list(color = onsv_palette$blue),
           text = ~paste("Vítimas:", obitos, "<br>Ano:", ano_ocorrencia),
           hoverinfo = "text") |> 
-  layout(yaxis = list(exponentformat = "none",
-                      title = "Óbitos"),
-         xaxis = list(title = "Data"),
-         separators = ",.")
+  plotly::layout(yaxis = list(exponentformat = "none",
+                              title = "Óbitos"),
+                 xaxis = list(title = "Data"),
+                 separators = ",.")
 ```
 
 ## Trimestral
@@ -262,7 +266,7 @@ rtdeaths |>
           line = list(color = onsv_palette$blue),
           text = ~paste("Vítimas:", obitos, "<br>Trimestre:", trimestre),
           hoverinfo = "text") |> 
-  layout(yaxis = list(exponentformat = "none",
+  plotly::layout(yaxis = list(exponentformat = "none",
                       title = "Óbitos"),
          xaxis = list(title = "Data"),
          separators = ",.")
@@ -287,7 +291,7 @@ rtdeaths |>
           line = list(color = onsv_palette$blue),
           text = ~paste("Vítimas:", obitos, "<br>Mês:", data),
           hoverinfo = "text") |> 
-  layout(yaxis = list(exponentformat = "none",
+  plotly::layout(yaxis = list(exponentformat = "none",
                       title = "Óbitos"),
          xaxis = list(title = "Data"),
          separators = ",.")
@@ -298,7 +302,7 @@ Os gráficos de óbitos no trânsito levantam uma tendência crescente nas víti
 
 Assim sendo, os demais atributos do conjunto de dados podem ser visualizados em função do tempo, como foi feito para o caso da variável preditada, com o intuito de destacar cada variável preditiva ao longo dos períodos disponíveis:
 
-::: panel-tabset
+:::::: panel-tabset
 ## Frota veicular (RENAVAM)
 
 ::: panel-tabset
@@ -338,7 +342,7 @@ plot_frota_anual <- fleetbr |>
     scale_color_manual(values = paleta)
 
 ggplotly(plot_frota_anual, tooltip = "text") |> 
-  layout(legend = list(title = list(text = "")),
+  plotly::layout(legend = list(title = list(text = "")),
          yaxis = list(title = list(standoff = 5)))
 ```
 
@@ -382,7 +386,7 @@ plot_frota_tri <- fleetbr |>
     scale_color_manual(values = paleta)
 
 ggplotly(plot_frota_tri, tooltip = "text") |> 
-  layout(legend = list(title = list(text = "")),
+  plotly::layout(legend = list(title = list(text = "")),
          yaxis = list(title = list(standoff = 5)))
 ```
 
@@ -422,7 +426,7 @@ plot_frota_mensal <- fleetbr |>
     scale_color_manual(values = paleta)
 
 ggplotly(plot_frota_mensal, tooltip = "text") |> 
-  layout(legend = list(title = list(text = "")),
+  plotly::layout(legend = list(title = list(text = "")),
          yaxis = list(title = list(standoff = 5)))
 ```
 :::
@@ -451,7 +455,7 @@ plot_pib_anual <- pib_mensal |>
     labs(x = "Data", y = "PIB (Mi US$)")
 
 ggplotly(plot_pib_anual, tooltip = "text") |> 
-  layout(yaxis = list(title = list(standoff = 5)))
+  plotly::layout(yaxis = list(title = list(standoff = 5)))
 ```
 
 ## Trimestral
@@ -473,7 +477,7 @@ plot_pib_tri <- pib_mensal |>
     labs(x = "Data", y = "PIB (Mi US$)")
 
 ggplotly(plot_pib_tri, tooltip = "text") |> 
-  layout(yaxis = list(title = list(standoff = 5)))
+  plotly::layout(yaxis = list(title = list(standoff = 5)))
 ```
 
 ## Mensal
@@ -495,7 +499,7 @@ plot_pib_mensal <- pib_mensal |>
     labs(x = "Data", y = "PIB (Mi US$)")
 
 ggplotly(plot_pib_mensal, tooltip = "text") |> 
-  layout(yaxis = list(title = list(standoff = 5)))
+  plotly::layout(yaxis = list(title = list(standoff = 5)))
 ```
 :::
 
@@ -521,7 +525,7 @@ plot_populacao <- df_total |>
     labs(x = "Data", y = "População")
 
 ggplotly(plot_populacao, tooltip = "text") |> 
-  layout(yaxis = list(title = list(standoff = 5)),
+  plotly::layout(yaxis = list(title = list(standoff = 5)),
          annotations = list(x = 0.05, y = 0.1, 
                             text = string1, 
                             showarrow = F, 
@@ -576,7 +580,7 @@ plot_prf_anual <- df_prf_plot |>
     labs(x = "Data", y = NULL)
 
 ggplotly(plot_prf_anual, tooltip = "text") |> 
-  layout(legend = list(title = list(text = "")))
+  plotly::layout(legend = list(title = list(text = "")))
 ```
 
 ## Trimestral
@@ -606,7 +610,7 @@ plot_prf_tri <- df_prf_plot |>
     labs(x = "Data", y = NULL)
 
 ggplotly(plot_prf_tri, tooltip = "text") |> 
-  layout(legend = list(title = list(text = "")))
+  plotly::layout(legend = list(title = list(text = "")))
 ```
 
 ## Mensal
@@ -636,7 +640,7 @@ plot_prf_mensal <- df_prf_plot |>
     labs(x = "Data", y = NULL)
 
 ggplotly(plot_prf_mensal, tooltip = "text") |> 
-  layout(legend = list(title = list(text = "")))
+  plotly::layout(legend = list(title = list(text = "")))
 ```
 :::
 
@@ -651,14 +655,14 @@ plot_condutores <- tabela_condutores |>
   ggplot(aes(ano, condutores)) +
     geom_line(color = onsv_palette$blue) +
     geom_point(aes(text = paste("Condutores:",condutores)), color = onsv_palette$blue, size = 0.5) +
-    scale_x_continuous(breaks = seq(2011, 2023, 1)) +
+    scale_x_continuous(breaks = seq(2011, 2024, 1)) +
     scale_y_continuous(labels = label_comma(big.mark = ".", decimal.mark = ",")) +
     labs(x = "Data", y = "Condutores")
 
 ggplotly(plot_condutores, tooltip = "text") |> 
-  layout(yaxis = list(title = list(standoff = 5)))
+  plotly::layout(yaxis = list(title = list(standoff = 5)))
 ```
-:::
+::::::
 
 Observa-se uma diferença entre os comportamentos de cada atributo ao longo do tempo. Variáveis convencionalmente cumulativas como a frota, a população e o número de condutores habilitados dispõem de um crescimento aproximadamente linear por todo o período de estudo. Todavia, detecta-se que a contagem da população se comportou de forma inesperada em alguns anos. Isso pode representar a diferença entre a população censitária e a população estimada pelo IBGE.
 
@@ -814,8 +818,8 @@ Estes índices são usualmente referidos em função de altas casas decimais par
 plot_taxas <- df_total |>
   select(ano, veiculos_total, populacao, mortes) |>
   mutate(
-    mortes = if_else(ano == 2022, 33894, mortes),
-    populacao = if_else(ano == 2022, 203080756, populacao)
+    mortes = if_else(ano == 2023, 34881, mortes),
+    populacao = if_else(ano == 2023, 203080756, populacao)
   ) |>
   mutate(
     taxa_hab = (mortes / populacao) * 100000,
@@ -828,15 +832,15 @@ plot_taxas <- df_total |>
   ggplot(aes(ano, value, color = name)) +
   geom_line() +
   geom_point(aes(text = paste0(name, ": ", round(value, 2)))) +
-  scale_x_continuous(limits = c(2011, 2022),
-                     breaks = seq(2011, 2022, 1)) +
+  scale_x_continuous(limits = c(2011, 2023),
+                     breaks = seq(2011, 2023, 1)) +
   facet_wrap(vars(name), scales = "free_y") +
   labs(y = "Índices", x = "Data") +
   scale_color_manual(values = paleta) +
   theme(axis.text.x = element_text(vjust = 0.5, angle = 90))
 
 ggplotly(plot_taxas, tooltip = "text") |>
-  layout(legend = list(title = list(text = "")))
+  plotly::layout(legend = list(title = list(text = "")))
 ```
 
 As duas taxas anunciam tendências distintas a cerca da fatalidade no trânsito brasileiro. Enquanto o índice de mortes por veículos oferece uma perspectiva de estabilização no número de vítimas, a taxa de habitantes corrobora à visão de que as mortes estão inclinadas ao aumento na década atual. Deve-se levar em consideração que esta diferença de comportamente pode resultar da evolução da frota veicular e da população nacional em intensidades distintas.
@@ -858,7 +862,7 @@ A análise de regressão linear múltipla foi a abordagem mais extensamente util
 
 metricas <- metric_set(rmse, mae, rsq)
 
-dados_modelo_2023 <- list(
+dados_modelo_2024 <- list(
   drop_na(count(rename(rtdeaths, ano = ano_ocorrencia), ano, name = "mortes")),
   summarise(filter(fleetbr, modal == "TOTAL", mes == 7), 
             .by = ano, frota = sum(frota)),
@@ -874,28 +878,28 @@ dados_modelo_2023 <- list(
   reduce(full_join, by = "ano") |> 
   arrange(ano)
 
-rec_anual_2023 <-
-  recipe(x = drop_na(dados_modelo_2023), mortes ~ .) |> 
+rec_anual_2024 <-
+  recipe(x = drop_na(dados_modelo_2024), mortes ~ .) |> 
   remove_role(ano, old_role = "predictor") |> 
   step_normalize(all_numeric_predictors())
 
-modelo_anual_2023 <-
+modelo_anual_2024 <-
   linear_reg() |> 
   set_engine("lm")
   
-wflow_anual_2023 <-
+wflow_anual_2024 <-
   workflow() |> 
-  add_model(modelo_anual_2023) |> 
-  add_recipe(rec_anual_2023) |> 
-  fit(drop_na(dados_modelo_2023))
+  add_model(modelo_anual_2024) |> 
+  add_recipe(rec_anual_2024) |> 
+  fit(drop_na(dados_modelo_2024))
 
-pred_anual_2023 <- bind_cols(
-  dados_modelo_2023,
-  predict(wflow_anual_2023, dados_modelo_2023),
-  predict(wflow_anual_2023, dados_modelo_2023, type = "conf_int")
+pred_anual_2024 <- bind_cols(
+  dados_modelo_2024,
+  predict(wflow_anual_2024, dados_modelo_2024),
+  predict(wflow_anual_2024, dados_modelo_2024, type = "conf_int")
 )
 
-metricas_anual <- metricas(data = pred_anual_2023, truth = mortes, estimate = .pred)
+metricas_anual <- metricas(data = pred_anual_2024, truth = mortes, estimate = .pred)
 ```
 
 Para o caso da análise anual, as previsões emitidas são comparadas com as ocorrências reais, enquanto as métricas são baseadas no mesmo conjunto de ajuste do modelo:
@@ -908,7 +912,7 @@ Para o caso da análise anual, as previsões emitidas são comparadas com as oco
 #| fig-cap: Previsão anual para RL
 #| label: fig-ypred-rl
 
-plot_pred_anual <- pred_anual_2023 |> 
+plot_pred_anual <- pred_anual_2024 |> 
   select(ano, mortes, .pred, .pred_lower, .pred_upper) |> 
   pivot_longer(
     cols = c(.pred, mortes),
@@ -943,7 +947,7 @@ ggplotly(plot_pred_anual, tooltip = "text")
 #| fig-cap: Previsto x Real anual RL
 #| label: fig-yqqplot-rl
 
-plot_qq_anual <- pred_anual_2023 |> 
+plot_qq_anual <- pred_anual_2024 |> 
   select(.pred, mortes, ano) |> 
   drop_na() |> 
   rename(Previsto = .pred, Real = mortes) |> 
@@ -1001,7 +1005,7 @@ Como este modelo em específico possui maior variedade de atributos, a combinaç
 #| tbl-cap: Coeficientes para modelo anual
 #| label: tbl-coefs
 
-wflow_anual_2023 |>
+wflow_anual_2024 |>
   tidy() |>
   mutate(
     "Variável" = c(
@@ -1035,7 +1039,7 @@ Os dados utilizados foram obtidos por meio do agrupamento trimestral dos dados m
 ```{r}
 #| include: false
 
-df_frota_2023 <- fleetbr |> 
+df_frota_2024 <- fleetbr |> 
   pivot_wider(names_from = modal, values_from = frota) |> 
   mutate(
     data = ym(paste0(ano,"-",mes)),
@@ -1050,19 +1054,19 @@ df_frota_2023 <- fleetbr |>
     motocicleta = sum(motocicleta)
   )
 
-df_mortes_2023 <- rtdeaths |> 
+df_mortes_2024 <- rtdeaths |> 
   mutate(mes = month(data_ocorrencia),
          ano = year(data_ocorrencia),
          data = ym(paste0(ano, "-", mes))) |> 
   count(data, name = "mortes") |> 
   drop_na()
 
-df_pib_2023 <- pib_mensal |> 
+df_pib_2024 <- pib_mensal |> 
   mutate(data = ym(paste0(ano, "-", mes))) |> 
   group_by(data) |> 
   summarise(pib)
 
-df_prf_2023 <- prf_sinistros |> 
+df_prf_2024 <- prf_sinistros |> 
   collect() |> 
   mutate(
     acidentes_fatais = if_else(
@@ -1080,12 +1084,12 @@ df_prf_2023 <- prf_sinistros |>
   ) |> 
   arrange(data)
   
-dados_mensais_2023 <- 
-  list(df_frota_2023, df_mortes_2023, df_pib_2023, df_prf_2023) |> 
+dados_mensais_2024 <- 
+  list(df_frota_2024, df_mortes_2024, df_pib_2024, df_prf_2024) |> 
   reduce(full_join, by = "data") |> 
   arrange(data)
 
-df_trimestre_2023 <- dados_mensais_2023 |>
+df_trimestre_2024 <- dados_mensais_2024 |>
   mutate(
     trimestre = quarter(data),
     data = quarter(data, type = "date_last")
@@ -1104,12 +1108,12 @@ df_trimestre_2023 <- dados_mensais_2023 |>
   ) |> 
   ungroup()
 
-splits_trimestre <- initial_split(drop_na(df_trimestre_2023), prop = 3/4)
+splits_trimestre <- initial_split(drop_na(df_trimestre_2024), prop = 3/4)
 train_trimestre <- training(splits_trimestre)
 test_trimestre <- testing(splits_trimestre)
 
 rec <- 
-  recipe(df_trimestre_2023, mortes ~ .) |> 
+  recipe(df_trimestre_2024, mortes ~ .) |> 
   remove_role(c(mortes_prf, trimestre, data), old_role = "predictor") |> 
   step_normalize(all_numeric_predictors())
 
@@ -1126,10 +1130,10 @@ lm_wflow_fit <-
   lm_wflow |> 
   fit(train_trimestre)
 
-pred_trimestre_2023 <- bind_cols(
-  df_trimestre_2023,
-  predict(lm_wflow_fit, df_trimestre_2023),
-  predict(lm_wflow_fit, df_trimestre_2023, type = "conf_int")
+pred_trimestre_2024 <- bind_cols(
+  df_trimestre_2024,
+  predict(lm_wflow_fit, df_trimestre_2024),
+  predict(lm_wflow_fit, df_trimestre_2024, type = "conf_int")
 )
 
 metricas_trimestre <- bind_cols(
@@ -1147,7 +1151,7 @@ metricas_trimestre <- bind_cols(
 #| fig-cap: Previsão trimestral para RL
 #| label: fig-tpred-rl
 
-plot_pred_tri <- pred_trimestre_2023 |> 
+plot_pred_tri <- pred_trimestre_2024 |> 
   select(data, trimestre, mortes, .pred_lower, .pred_upper, .pred) |> 
   filter(year(data) > 2010) |>  
   pivot_longer(cols = c(.pred, mortes),
@@ -1178,7 +1182,7 @@ ggplotly(plot_pred_tri, tooltip = "text")
 #| fig-cap: Previsto x Real trimestral RL
 #| label: fig-tqqplot-rl
 
-plot_qq_tri <- pred_trimestre_2023 |> 
+plot_qq_tri <- pred_trimestre_2024 |> 
   select(data, .pred, mortes) |> 
   drop_na() |> 
   rename(Previsto = .pred, Real = mortes) |> 
@@ -1234,34 +1238,34 @@ A escala mensal é a menor unidade temporal abordada para o estudo e permite obs
 ```{r}
 #| include: false
 
-split_2023 <- initial_split(drop_na(dados_mensais_2023), prop = 0.8)
+split_2024 <- initial_split(drop_na(dados_mensais_2024), prop = 0.8)
 
-train_2023 <- training(split_2023)
-test_2023 <- testing(split_2023)
+train_2024 <- training(split_2024)
+test_2024 <- testing(split_2024)
 
-rec_mensal_2023 <-
-  recipe(train_2023, mortes ~ .) |> 
+rec_mensal_2024 <-
+  recipe(train_2024, mortes ~ .) |> 
   remove_role(c(mortes_prf, data), old_role = "predictor") |> 
   step_normalize(all_numeric_predictors())
 
-lm_mensal_2023 <-
+lm_mensal_2024 <-
   linear_reg() |> 
   set_engine("lm")
 
-lm_wflow_mensal_2023 <-
+lm_wflow_mensal_2024 <-
   workflow() |> 
-  add_model(lm_mensal_2023) |> 
-  add_recipe(rec_mensal_2023) |> 
-  fit(train_2023)
+  add_model(lm_mensal_2024) |> 
+  add_recipe(rec_mensal_2024) |> 
+  fit(train_2024)
 
-pred_mensal_2023 <-
+pred_mensal_2024 <-
   bind_cols(
-    dados_mensais_2023,
-    predict(lm_wflow_mensal_2023, dados_mensais_2023),
-    predict(lm_wflow_mensal_2023, dados_mensais_2023, type = "conf_int")
+    dados_mensais_2024,
+    predict(lm_wflow_mensal_2024, dados_mensais_2024),
+    predict(lm_wflow_mensal_2024, dados_mensais_2024, type = "conf_int")
   )
 
-metricas_mensal <- metricas(pred_mensal_2023, truth = mortes, estimate = .pred)
+metricas_mensal <- metricas(pred_mensal_2024, truth = mortes, estimate = .pred)
 ```
 
 ::: panel-tabset
@@ -1272,7 +1276,7 @@ metricas_mensal <- metricas(pred_mensal_2023, truth = mortes, estimate = .pred)
 #| fig-cap: Previsão mensal para RL
 #| label: fig-mpred-rl
 
-plot_pred_mensal <- pred_mensal_2023 |> 
+plot_pred_mensal <- pred_mensal_2024 |> 
   filter(year(data) > 2010) |> 
   pivot_longer(cols = c(.pred, mortes),
                names_to = "Tipo",
@@ -1298,7 +1302,7 @@ ggplotly(plot_pred_mensal, tooltip = "text")
 #| fig-cap: Previsto x Real mensal RL
 #| label: fig-mqqplot-rl
 
-plot_qq_mensal <- pred_mensal_2023 |> 
+plot_qq_mensal <- pred_mensal_2024 |> 
   select(data, .pred, mortes) |> 
   drop_na() |> 
   rename(Previsto = .pred, Real = mortes) |> 
@@ -1365,17 +1369,17 @@ rf <-
 rf_wflow <- 
   workflow() |> 
   add_model(rf) |> 
-  add_recipe(rec_mensal_2023) |>
-  fit(train_2023)
+  add_recipe(rec_mensal_2024) |>
+  fit(train_2024)
 
 rf_pred <- bind_cols(
-  predict(rf_wflow, drop_na(dados_mensais_2023, veiculos)),
-  drop_na(dados_mensais_2023, veiculos)
+  predict(rf_wflow, drop_na(dados_mensais_2024, veiculos)),
+  drop_na(dados_mensais_2024, veiculos)
 )
 
 metricas_rf <- bind_cols(
-  predict(rf_wflow, test_2023),
-  test_2023
+  predict(rf_wflow, test_2024),
+  test_2024
 ) |> 
   metricas(truth = mortes, estimate = .pred)
 ```
@@ -1470,7 +1474,7 @@ df_mortes <- rtdeaths |>
   summarise(.by = data, mortes = n()) |> 
   drop_na()
 
-ts <- ts(df_mortes$mortes, start = c(1996, 1), end = c(2022, 12), frequency = 12)
+ts <- ts(df_mortes$mortes, start = c(1996, 1), end = c(2023, 12), frequency = 12)
 
 decomposed <- decompose(ts)
 ```
@@ -1978,7 +1982,7 @@ A presente seção inclui o processo e resultado da estimativa de custos para a 
 
 Em 2020, o IPEA divulgou o relatório "CUSTOS DOS ACIDENTES DE TRÂNSITO NO BRASIL: ESTIMATIVA SIMPLIFICADA COM BASE NA ATUALIZAÇÃO DAS PESQUISAS DO IPEA SOBRE CUSTOS DE ACIDENTES NOS AGLOMERADOS URBANOS E RODOVIAS" [@carvalhoCustosAcidentesTransito2020a], cujo principal objetivo foi apresentar o resultado das atualizações das pesquisas de custos dos acidentes de trânsito no Brasil.
 
-No trabalho realizado pelo IPEA, a estimativa dos custos dos sinistros é realizada de forma distinta para rodovias federais, rodovias estaduais ou municipais, e aglomerados urbanos. A estimativa para os sinistros ocorridos em rodovias federais é baseada em três componentes: (i) componentes de custos associados às pessoas; (ii) componentes de custos associados aos veículos; e (iii) componentes de custos institucionais e danos patrimoniais [@carvalhoCustosAcidentesTransito2020a]. 
+No trabalho realizado pelo IPEA, a estimativa dos custos dos sinistros é realizada de forma distinta para rodovias federais, rodovias estaduais ou municipais, e aglomerados urbanos. A estimativa para os sinistros ocorridos em rodovias federais é baseada em três componentes: (i) componentes de custos associados às pessoas; (ii) componentes de custos associados aos veículos; e (iii) componentes de custos institucionais e danos patrimoniais [@carvalhoCustosAcidentesTransito2020a].
 
 Para o fim de estimar o custo dos óbitos no trânsito brasileiro em 2023, será utilizado o custo associado às pessoas, na categoria "Mortos". Mesmo que essa seja uma estimativa para rodovias federais, ela será utilizada no calculo dos custos dos óbitos de uma forma geral para a quantidade de óbitos no Brasil em 2023, pois as outras categorias (rodovias estaduais / municipais e aglomerados urbanos) não possuem essa estimativa de componente associado às pessoas. Assim, será possível alcançar uma estimativa aproximada deste custo total.
 
@@ -2012,10 +2016,9 @@ custo_rs <- scales::dollar(
 custo_rs
 ```
 
+Os componentes de custos associados às pessoas que foram à óbito por consequência de sinistros de trânsito englobam os custos pré-hospitalares, custos hospitalares, custos de perda de perda de produção e custos de remoção. O IPEA estimou um custo total associado à cada vítima fatal de sinistros de R\$ 433.286,69, considerando um valor em reais de dezembro de 2014 [@carvalhoCustosAcidentesTransito2020a]. Com o objetivo desse atualizar esse valor para dezembro de 2023, utilizou-se o Índice Nacional de Preços ao Consumidor Amplo (IPCA). De acordo com a Calculadora do Cidadão, disponibilizada pelo @bancocentraldobrasilCalculadoraCidadao2022, o IPCA acumulado entre dez/2014 e dez/2023 é de 68,14%. Assim, para alcançar o custo por vítima fatal em 2023, multiplica-se a taxa de `r scales::number(ipca, decimal.mark = ",", accuracy = 0.0001)` pelo custo de 2014, alcançando um **custo por óbito de `r custo_individual`**.
 
-Os componentes de custos associados às pessoas que foram à óbito por consequência de sinistros de trânsito englobam os custos pré-hospitalares, custos hospitalares, custos de perda de perda de produção e custos de remoção. O IPEA estimou um custo total associado à cada vítima fatal de sinistros de R$ 433.286,69, considerando um valor em reais de dezembro de 2014 [@carvalhoCustosAcidentesTransito2020a]. Com o objetivo desse atualizar esse valor para dezembro de 2023, utilizou-se o Índice Nacional de Preços ao Consumidor Amplo (IPCA). De acordo com a Calculadora do Cidadão, disponibilizada pelo @bancocentraldobrasilCalculadoraCidadao2022, o IPCA acumulado entre dez/2014 e dez/2023 é de 68,14%. Assim, para alcançar o custo por vítima fatal em 2023, multiplica-se a taxa de `r scales::number(ipca, decimal.mark = ",", accuracy = 0.0001)` pelo custo de 2014, alcançando um **custo por óbito de `r custo_individual`**.
-
-Por fim, multiplicando o custo individual das mortes em 2023 pela quantidade estimada de óbitos de `r scales::number(pred_2023, big.mark = ".", decimal.mark = ",")`, tem-se que o custo total dos óbitos previstos no trânsito em 2023 é de `r custo_rs`, ou aproximadamente **R$ 25,2 bilhões**.
+Por fim, multiplicando o custo individual das mortes em 2023 pela quantidade estimada de óbitos de `r scales::number(pred_2023, big.mark = ".", decimal.mark = ",")`, tem-se que o custo total dos óbitos previstos no trânsito em 2023 é de `r custo_rs`, ou aproximadamente **R\$ 25,2 bilhões**.
 
 <!--- ### Impacto no sistema de atendimento de saúde {#sec-internacoes} -->
 
@@ -2045,7 +2048,7 @@ Os modelos regressivos desenvolvidos antecipam uma tendência ao aumento relativ
 
 Com base no modelo de regressão linear anual, que apresentou o melhor R-quadrado ($R^2 = 0,98$), a quantidade prevista de óbitos no trânsito brasileiro é de 34.631, representando um aumento de 737 vítimas fatais em comparação com a quantidade de 2022, que foi de 33.894. Traduzindo esses valores em taxas de óbitos por 100 mil habitantes, o valor previsto para 2023 é de 17,05 óbitos por 100 mil habitantes, um aumento em comparação com a taxa observada em 2022, que foi 16,69 óbitos por 100 mil habitantes. Considernado o modelo de regressão linear trimestral ($R^2 = 0,91$), a quantidade trimestral de óbitos previstos para o primeiro trimestre de 2023 é de 8.271, um aumento de 5% em relação com o valor observado no primeiro trimestre de 2022: 7.862 óbitos.
 
-Com a estimativa dos custos dos óbitos realizada, foi possível chegar a um valor aproximado de R$ 25 bilhões com base nos 34.631 previstos, ou seja, aproximadamente R$ 730 mil por óbito.
+Com a estimativa dos custos dos óbitos realizada, foi possível chegar a um valor aproximado de R\$ 25 bilhões com base nos 34.631 previstos, ou seja, aproximadamente R\$ 730 mil por óbito.
 
 É fundamental também destacar que as soluções de segurança viária não dependem apenas de atributos da mobilidade urbana. Inúmeros fatores socioeconômicos e de infraestrutura podem afetar o desempenho da segurança. O cenário atual da segurança viária brasileira apresenta alguns desafios e deficiências que podem impactar na conquista das metas de redução estabelecidas em âmbito nacional pelo PNATRANS. Os dados previstos mostram um desempenho abaixo do ideal no combate da fatalidade no trânsito brasileiro, conferindo uma perspectiva pessimista para a década atual no Brasil e, caso este cenário não seja amenizado com antecedência, é improvável a ocorrência de avanços significativos nos objetivos da Segunda Década de Ação pela Segurança no Trânsito.
 
