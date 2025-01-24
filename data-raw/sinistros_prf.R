@@ -1,7 +1,7 @@
 library(arrow)
 library(tidyverse)
 
-url <- "https://github.com/ONSV/prfdata/releases/download/v0.2.1/prf_sinistros.parquet"
+url <- "https://github.com/plmex/prfdata/releases/download/v0.2.2/prf_sinistros.parquet"
 
 temp_file <- tempfile(fileext = ".parquet")
 
