@@ -59,13 +59,29 @@ load(here("data","tabela_total_mensal.rda"))
 load(here("data/pib_mensal.rda"))
 load(here("data","tabela_condutores.rda"))
 
-url <- "https://github.com/ONSV/prfdata/releases/download/v0.2.1/prf_sinistros.parquet"
+url <- "https://github.com/plmex/prfdata/releases/download/v0.2.2/prf_sinistros.parquet"
 
 temp_file <- tempfile(fileext = ".parquet")
 
 download.file(url, temp_file, quiet = T)
 
-prf_sinistros <- open_dataset(temp_file) 
+prf_sinistros <- open_dataset(temp_file)|>
+   mutate(
+    acidentes_fatais = if_else(
+      classificacao_acidente == "Com Vítimas Fatais",
+      1, 0, missing = 0
+    )
+  ) |> 
+  summarise(
+    .by = ano,
+    qnt_acidentes = n(),
+    qnt_acidentes_fatais = sum(acidentes_fatais),
+    qnt_feridos = sum(feridos, na.rm = ),
+    qnt_mortos = sum(mortos)
+  ) |> 
+  arrange(ano) |> 
+  filter(ano <= 2023) |> 
+  collect()
 
 # paleta
 paleta = as_vector(unname(onsv_palette))
@@ -878,28 +894,28 @@ dados_modelo_2024 <- list(
   reduce(full_join, by = "ano") |> 
   arrange(ano)
 
-rec_anual_2024 <-
-  recipe(x = drop_na(dados_modelo_2024), mortes ~ .) |> 
-  remove_role(ano, old_role = "predictor") |> 
-  step_normalize(all_numeric_predictors())
-
-modelo_anual_2024 <-
-  linear_reg() |> 
-  set_engine("lm")
-  
-wflow_anual_2024 <-
-  workflow() |> 
-  add_model(modelo_anual_2024) |> 
-  add_recipe(rec_anual_2024) |> 
-  fit(drop_na(dados_modelo_2024))
-
-pred_anual_2024 <- bind_cols(
-  dados_modelo_2024,
-  predict(wflow_anual_2024, dados_modelo_2024),
-  predict(wflow_anual_2024, dados_modelo_2024, type = "conf_int")
-)
-
-metricas_anual <- metricas(data = pred_anual_2024, truth = mortes, estimate = .pred)
+# rec_anual_2024 <-
+#   recipe(x = drop_na(dados_modelo_2024), mortes ~ .) |> 
+#   remove_role(ano, old_role = "predictor") |> 
+#   step_normalize(all_numeric_predictors())
+# 
+# modelo_anual_2024 <-
+#   linear_reg() |> 
+#   set_engine("lm")
+#   
+# wflow_anual_2024 <-
+#   workflow() |> 
+#   add_model(modelo_anual_2024) |> 
+#   add_recipe(rec_anual_2024) |> 
+#   fit(drop_na(dados_modelo_2024))
+# 
+# pred_anual_2024 <- bind_cols(
+#   dados_modelo_2024,
+#   predict(wflow_anual_2024, dados_modelo_2024),
+#   predict(wflow_anual_2024, dados_modelo_2024, type = "conf_int")
+# )
+# 
+# metricas_anual <- metricas(data = pred_anual_2024, truth = mortes, estimate = .pred)
 ```
 
 Para o caso da análise anual, as previsões emitidas são comparadas com as ocorrências reais, enquanto as métricas são baseadas no mesmo conjunto de ajuste do modelo:
