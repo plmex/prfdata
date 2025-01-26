@@ -69,7 +69,7 @@ read_arrow_vitimas_2015 <- function(pattern) {
 
 read_arrow_vitimas_2016 <- function(pattern) {
   file_list <- list.files("data-raw", pattern = pattern, full.names = TRUE)
-  list2016 <- file_list[10:17]
+  list2016 <- file_list[10:18]
   arrow_list <- lapply(
     list2016, 
     read_csv2_arrow, 
@@ -232,9 +232,8 @@ prf_vitimas <- vitimas |>
     ano = year(data_inversa)
   ) |> 
   select(
-    -ilesos, -feridos_leves, -feridos_graves, -mortos,
-    -latitude, -longitude, -regional, -delegacia, -uop
-  )
+    -c(ilesos, feridos_leves, feridos_graves, mortos,
+    latitude, longitude, regional, delegacia, uop))
 
 write_parquet(vitimas, "data/prf_vitimas.parquet")
 zip("data/prf_vitimas.zip", "data/prf_vitimas.parquet")
